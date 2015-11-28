@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    jubako (0.0.1)
+    jubako (0.0.2)
       rails (>= 4.1.0)
 
 GEM
