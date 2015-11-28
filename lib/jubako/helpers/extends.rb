@@ -1,7 +1,8 @@
 module Jubako::Helpers
   module Extends
     def extends(layout)
-      content_for(:jubako_extend_layout, layout, flush: true)
+      scope = content_for(:jubako_scope)
+      content_for("jubako_extend_#{scope}", layout, flush: true)
     end
   end
 end

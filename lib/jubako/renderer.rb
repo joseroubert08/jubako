@@ -1,28 +1,40 @@
 module Jubako
   module Renderer
-    def jubako_renderer(layout, locals = {})
-      extends = content_for(:jubako_extend_layout)
-      layout  = layout.call if layout.is_a?(Proc)
-      args    = { locals: locals }
+    extend ActiveSupport::Concern
 
-      content_for(:jubako_extend_layout, '', flush: true)
+    included do
+      alias_method_chain :render_template, :jubako
+      alias_method_chain :render_partial, :jubako
+    end
 
-      if layout.nil?
-        if extends.nil?
-          return yield
-        else
-          args[:template] = extends
-        end
-      else
-        if extends.nil?
-          args[:template] = layout
-        else
-          args[:template] = extends
-          args[:layout]   = layout
-        end
+    def render_template_with_jubako(context, options)
+      jubako_scoped(context, options) do
+        render_template_without_jubako(context, options)
       end
+    end
 
-      render(args)
+    def render_partial_with_jubako(context, options, &block)
+      jubako_scoped(context, options) do
+        render_partial_without_jubako(context, options, &block)
+      end
+    end
+
+    private
+
+    def jubako_scoped(ctx, opts)
+      old_scope = ctx.content_for(:jubako_scope)
+      new_scope = old_scope
+      new_scope = SecureRandom.hex(8) unless opts[:jubako]
+
+      opts[:locals] ||= {}
+      opts[:locals]["jubako_layout_#{new_scope}"] = opts[:layout]
+      opts[:layout] = 'layout/jubako'
+
+      ctx.content_for(:jubako_scope, new_scope, flush: true)
+      ret = yield(new_scope)
+      ctx.content_for(:jubako_scope, old_scope || '', flush: true)
+
+      ret
     end
   end
 end
